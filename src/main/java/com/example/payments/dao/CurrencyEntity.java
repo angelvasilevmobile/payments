@@ -2,7 +2,7 @@ package com.example.payments.dao;
 
 import java.util.List;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 public class CurrencyEntity {

@@ -3,7 +3,7 @@ package com.example.payments.dao;
 import java.math.BigDecimal;
 import java.util.Date;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "transactions")

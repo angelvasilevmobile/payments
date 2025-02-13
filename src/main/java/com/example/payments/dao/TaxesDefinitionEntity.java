@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -22,6 +22,10 @@ public class TaxesDefinitionEntity {
 	private Long id;
 	@Column
 	private BigDecimal percentage;
+	@Column
+	private String transactionCurrency;
+	@Column
+	private String receiverCurrency;
 
 
 }

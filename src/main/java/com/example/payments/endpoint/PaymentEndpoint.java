@@ -2,7 +2,7 @@ package com.example.payments.endpoint;
 
 import java.util.List;
 
-import javax.websocket.server.PathParam;
+//import javax.websocket.server.PathParam;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

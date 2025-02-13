@@ -2,13 +2,15 @@ package com.example.payments.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import com.example.payments.dao.*;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.interceptor.CacheableOperation;
 import org.springframework.stereotype.Service;
 
-import com.example.payments.dao.ChannelEntity;
-import com.example.payments.dao.ChannelRepository;
-import com.example.payments.dao.ClientProfileEntity;
-import com.example.payments.dao.ClientProfileRepository;
 import com.example.payments.endpoint.Channel;
 import com.example.payments.endpoint.Currency;
 import com.example.payments.endpoint.PaymentData;
@@ -24,13 +26,19 @@ public class PaymentService {
 	private ChannelRepository channelRepository;
 	private ClientProfileRepository clientProfileRepository;
 	private KafkaProducerService eventService;
+	private PaymentAttemptRepository paymentAttemptRepository;
+	private ModelMapper modelMapper;
 
 	public PaymentService(ChannelRepository channelRepository,
 			ClientProfileRepository clientProfileRepository,
-			KafkaProducerService notificationService) {
+			KafkaProducerService notificationService,
+						  PaymentAttemptRepository paymentAttemptRepository,
+						  ModelMapper modelMapper) {
 		this.channelRepository = channelRepository;
 		this.eventService = notificationService;
 		this.clientProfileRepository = clientProfileRepository;
+		this.paymentAttemptRepository = paymentAttemptRepository;
+		this.modelMapper = modelMapper;
 	}
 
 	public PaymentResponse pay(PaymentRequest paymentRequest) {
@@ -130,8 +138,8 @@ public class PaymentService {
 	}
 
 	public PaymentData findById(Long paymentId) {
-		// TODO Auto-generated method stub
-		return null;
+		Optional<PaymentAttemptEntity> paymentAttemptEntity = paymentAttemptRepository.findById(paymentId);
+		return modelMapper.map(paymentAttemptEntity.get(), PaymentData.class);
 	}
 
 }

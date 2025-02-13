@@ -1,15 +1,17 @@
 package com.example.payments.endpoint;
 
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProviderRequest {
 
-	public String getLocation() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public String getCurrency() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	private String location;
+	private String currency;
 }

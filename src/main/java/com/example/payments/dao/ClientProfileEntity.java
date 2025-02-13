@@ -3,12 +3,20 @@ package com.example.payments.dao;
 import java.math.BigDecimal;
 import java.util.List;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Setter
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 public class ClientProfileEntity {
 
@@ -21,45 +29,10 @@ public class ClientProfileEntity {
 	private BigDecimal balance;
 	@Column(name = "username")
 	private String username;
-	
-	
-	public BigDecimal getBalance() {
-		return this.balance;
-	}
-
-
-	public Long getId() {
-		return id;
-	}
-
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-
-	public List<RoleEntity> getRoles() {
-		return roles;
-	}
-
-
-	public void setRoles(List<RoleEntity> roles) {
-		this.roles = roles;
-	}
-
-
-	public String getUsername() {
-		return username;
-	}
-
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-
-	public void setBalance(BigDecimal balance) {
-		this.balance = balance;
-	}
-
+	@Column
+	private String country;
+	@Column
+	private String address;
+	@Column
+	private String currency;
 }

@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.Map;
 
 import com.example.payments.dao.*;
+import com.example.payments.provider.DefaultProvider;
+import com.example.payments.provider.Stripe;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,8 +76,8 @@ public class PaymentProcessor {
 			receiver.setBalance(receiver.getBalance().add(paymentAmount));
 			clientProfileRepository.save(receiver);
 			
-			String topic = (String) parsedJson.get("provider");
-			topicProducer.send(topic, buildProviderSpecificJson(parsedJson));
+			String topic = (String) parsedJson.get("provider-name");
+			topicProducer.send(topic, buildProviderSpecificJson(topic, parsedJson));
 			
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block
@@ -83,8 +85,18 @@ public class PaymentProcessor {
 		}
 	}
 
-	private String buildProviderSpecificJson(Map<String, ?> parsedJson) {
-		// TODO Auto-generated method stub
-		return null;
+	private String buildProviderSpecificJson(String topic, Map<String, ?> parsedJson) {
+		ObjectMapper jsonMapper = new ObjectMapper();
+		String providerName = (String) parsedJson.get("provider-name");
+		String result = null;
+		switch (providerName) {
+			case "STRIPE-FOR-EXAMPLE" :
+				result = jsonMapper.convertValue(parsedJson, Stripe.class).toString();
+				break;
+			default:
+				result = jsonMapper.convertValue(parsedJson, DefaultProvider.class).toString();
+				break;
+		}
+		return result;
 	}
 }

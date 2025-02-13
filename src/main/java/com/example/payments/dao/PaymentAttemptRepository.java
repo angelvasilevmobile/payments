@@ -1,5 +1,7 @@
 package com.example.payments.dao;
 
-public class PaymentAttemptRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PaymentAttemptRepository extends JpaRepository<PaymentAttemptEntity, Long>  {
 
 }

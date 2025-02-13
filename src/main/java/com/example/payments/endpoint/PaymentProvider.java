@@ -4,7 +4,7 @@ public class PaymentProvider {
 
     private String name;
     private String currency;
-    private String country;
+    private String location;
 
     public String getName() {
         return name;
@@ -22,18 +22,18 @@ public class PaymentProvider {
         this.currency = currency;
     }
 
-    public String getCountry() {
-        return country;
+    public String getLocation() {
+        return location;
     }
 
-    public void setCountry(String country) {
-        this.country = country;
+    public void setLocation(String location) {
+        this.location = location;
     }
 
-    public PaymentProvider(String name, String currency, String country) {
+    public PaymentProvider(String name, String currency, String location) {
         this.name = name;
         this.currency = currency;
-        this.country = country;
+        this.location = location;
     }
 
     public PaymentProvider() {

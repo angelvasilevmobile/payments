@@ -1,10 +1,21 @@
 package com.example.payments;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
+import com.example.payments.dao.*;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.modelmapper.ModelMapper;
+//import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -12,9 +23,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+//import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-import com.rabbitmq.client.ConnectionFactory;
+//import com.rabbitmq.client.ConnectionFactory;
 
 //@EnableWebMvc
 @Configuration
@@ -49,4 +60,43 @@ public class PaymentsApplication {
 //	public RabbitTemplate rabbitTemplate() {
 //		return new RabbitTemplate();
 //	}
+
+	@Bean
+	public ModelMapper modelMapper() {
+		return new ModelMapper();
+	}
+
+//	@Bean
+//	public ProducerFactory<String, Object> producerFactory() {
+//		Map<String, Object> configProps = new HashMap<>();
+//		configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+//		configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+//		configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+//		return new DefaultKafkaProducerFactory<>(configProps);
+//	}
+
+	@Bean
+	public CommandLineRunner loadData(PaymentProviderRepository paymentProviderRepository,
+									  PaymentAttemptRepository paymentAttemptRepository) {
+		return args -> {
+			Logger logger = LoggerFactory.getLogger(getClass());
+			if (paymentProviderRepository.count() != 0L) {
+				logger.info("Using existing database");
+				return;
+			}
+			PaymentProviderEntity paymentProviderEntity =
+					new PaymentProviderEntity(1l, "BG", "BGN", "STRIPE");
+			paymentProviderRepository.save(paymentProviderEntity);
+			logger.info("Payment provider created.");
+
+			ClientProfileEntity sender = new ClientProfileEntity(null, null, new BigDecimal(5000l), "sender@payments.com", "BG", "Address 1", "BGN");
+			ClientProfileEntity receiver = new ClientProfileEntity(null, null, new BigDecimal(5000l), "receiver@payments.com", "BG", "Address 2", "BGN");
+			PaymentProviderEntity provider = new PaymentProviderEntity(2l, "BG", "BGN", "STRIPE");
+			PaymentAttemptEntity payment = new PaymentAttemptEntity(1l, provider, "BGN", new BigDecimal(50l),
+					new BigDecimal(5l), sender, receiver);
+			paymentAttemptRepository.save(payment);
+			logger.info("Payment attempt created.");
+
+		};
+	}
 }
