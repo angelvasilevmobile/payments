@@ -9,6 +9,6 @@ public class PaymentAttemptProcessor {
 
 	@KafkaListener(groupId = "payment-attempts", topics = Topics.PAYMENT_ATTEMPTS)
 	public void handleKafkaMessage(String message) {
-		//send email on successfull payment event
+		//audit for payment event
 	}
 }

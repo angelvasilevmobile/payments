@@ -2,11 +2,15 @@ package com.example.payments.service;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.Map;
 
 import com.example.payments.dao.*;
+import com.example.payments.endpoint.ClientProfile;
+import com.example.payments.endpoint.Currency;
+import com.example.payments.endpoint.PaymentRequest;
 import com.example.payments.provider.DefaultProvider;
 import com.example.payments.provider.Stripe;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +28,7 @@ public class PaymentProcessor {
 	private PaymentProviderRepository paymentProviderRepository;
 	private AntifraudProviderRepository antifraudProviderRepository;
 	private KafkaProducerService topicProducer;
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	public PaymentProcessor(ClientProfileRepository clientProfileRepository,
 			TaxService taxesService,
@@ -40,63 +45,73 @@ public class PaymentProcessor {
 	}
 
 	@KafkaListener(groupId = "payments", topics = Topics.PAYMENTS)
-	public void handleKafkaMessage(String json) {
+	public String handleKafkaMessage(String json) {
 		//withdraw money, transfer money, call payment provider
 		try {
-			Map<String, ?> parsedJson = new ObjectMapper().readValue(json, Map.class);
+			PaymentRequest paymentRequest = new ObjectMapper().readValue(json, PaymentRequest.class);
+
+			ClientProfile sender = paymentRequest.getSender();
+			ClientProfileEntity senderEntity = clientProfileRepository.findByUsername(sender.getUsername());
+			ClientProfile receiver = paymentRequest.getReceiver();
+			ClientProfileEntity receiverEntity = clientProfileRepository.findByUsername(receiver.getUsername());
 			
-			String senderUsername = (String) parsedJson.get("sender-username");
-			ClientProfileEntity sender = clientProfileRepository.findByUsername(senderUsername);
-			String receiverUsername = (String) parsedJson.get("receiver-username");
-			ClientProfileEntity receiver = clientProfileRepository.findByUsername(receiverUsername);
-			
-			BigDecimal paymentAmount = (BigDecimal) parsedJson.get("amount");
-			String transactionCurrency = (String) parsedJson.get("currency");
-			String receiverCurrency = (String) parsedJson.get("receiver-currency");
-			BigDecimal taxesAmount = taxService.calculateTax(paymentAmount, transactionCurrency, receiverCurrency);
+			BigDecimal paymentAmount = (BigDecimal) paymentRequest.getAmount();
+			Currency transactionCurrency = paymentRequest.getCurrency();
+			String receiverCurrency = receiverEntity.getCurrency();
+			BigDecimal taxesAmount = taxService.calculateTax(paymentAmount, transactionCurrency.toString(), receiverCurrency);
 			BigDecimal fullAmount = paymentAmount.add(taxesAmount);
 
-			PaymentProviderEntity paymentProvider = paymentProviderRepository.findByName((String) parsedJson.get("provider-name"));
+			PaymentProviderEntity paymentProvider = paymentProviderRepository.findByName(paymentRequest.getProvider().getName());
 
-			AntifraudProviderEntity antifraudProvider = antifraudProviderRepository.findByName((String) parsedJson.get("antifraud-provider-name"));
+//			AntifraudProviderEntity antifraudProvider = antifraudProviderRepository.findByName(channel.getAtifraudProvider());
 
 			TransactionEntity transaction = new TransactionEntity();
-			transaction.setSender(sender);
-			transaction.setReceiver(receiver);
+			transaction.setSender(senderEntity);
+			transaction.setReceiver(receiverEntity);
 			transaction.setAmount(paymentAmount);
 			transaction.setFee(taxesAmount);
 			transaction.setDate(new Date());
 			transaction.setPaymentProvider(paymentProvider);
-			transaction.setAntifraudProvider(antifraudProvider);
+			transaction.setAntifraudProvider(null);
 			transactionRepository.save(transaction);
 			
-			sender.setBalance(sender.getBalance().subtract(fullAmount));
-			clientProfileRepository.save(sender);
+			senderEntity.setBalance(senderEntity.getBalance().subtract(fullAmount));
+			clientProfileRepository.save(senderEntity);
 			
-			receiver.setBalance(receiver.getBalance().add(paymentAmount));
-			clientProfileRepository.save(receiver);
+			receiverEntity.setBalance(receiverEntity.getBalance().add(paymentAmount));
+			clientProfileRepository.save(receiverEntity);
 			
-			String topic = (String) parsedJson.get("provider-name");
-			topicProducer.send(topic, buildProviderSpecificJson(topic, parsedJson));
-			
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			String topic = paymentProvider.getName();
+//			topicProducer.send(topic, buildProviderSpecificJson(topic, paymentRequest));
+
+			return "success";
+		} catch (Exception e) {
+			logger.error("Payment processing failed." , e);
+			return "failure";
 		}
 	}
 
-	private String buildProviderSpecificJson(String topic, Map<String, ?> parsedJson) {
+	private String buildProviderSpecificJson(String topic, PaymentRequest paymentRequest) {
 		ObjectMapper jsonMapper = new ObjectMapper();
-		String providerName = (String) parsedJson.get("provider-name");
+		String providerName = paymentRequest.getProvider().getName();
 		String result = null;
-		switch (providerName) {
-			case "STRIPE-FOR-EXAMPLE" :
-				result = jsonMapper.convertValue(parsedJson, Stripe.class).toString();
-				break;
-			default:
-				result = jsonMapper.convertValue(parsedJson, DefaultProvider.class).toString();
-				break;
+		try {
+			switch (providerName) {
+				case "STRIPE" :
+					Stripe stripe = new Stripe();
+					stripe.setName(paymentRequest.getProvider().getName());
+					stripe.setCurrency(paymentRequest.getCurrency().toString());
+					result = jsonMapper.convertValue(stripe, Stripe.class).toString();
+					break;
+				default:
+					DefaultProvider defaultProvider = new DefaultProvider("DEFAULT-PROVIDER", "BGN");
+					result = jsonMapper.convertValue(defaultProvider, DefaultProvider.class).toString();
+					break;
+			}
+		} catch (Exception e) {
+			logger.error("Unable to parse provider specific json.", e);
 		}
+
 		return result;
 	}
 }

@@ -2,9 +2,13 @@ package com.example.payments.service;
 
 import java.util.Properties;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +32,8 @@ public class KafkaProducerService {
 
 	private Producer<String, String> kafkaProducer = new KafkaProducer<>(props);
 	private KafkaTemplate<String, String> kafkaTemplate;
+	private ObjectMapper objectMapper = new ObjectMapper();
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	public KafkaProducerService(KafkaTemplate<String, String> kafkaTemplate) {
 		super();
@@ -71,10 +77,14 @@ public class KafkaProducerService {
 		return null;
 	}
 	
-	private String buildPaymentMessage(Channel channel, PaymentRequest paymentRequest, Currency currency) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public String buildPaymentMessage(Channel channel, PaymentRequest paymentRequest, Currency currency) {
+        try {
+            return objectMapper.writeValueAsString(paymentRequest);
+        } catch (JsonProcessingException e) {
+            logger.error("Invalid payment json.");
+        }
+        return "Invalid payment json.";
+    }
 
 	private String buildTaxesMessage(Channel channel, PaymentRequest paymentRequest, Currency currency) {
 		// TODO Auto-generated method stub

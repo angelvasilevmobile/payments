@@ -1,8 +1,10 @@
 package com.example.payments;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.Properties;
 
 import com.example.payments.dao.*;
@@ -77,7 +79,8 @@ public class PaymentsApplication {
 
 	@Bean
 	public CommandLineRunner loadData(PaymentProviderRepository paymentProviderRepository,
-									  PaymentAttemptRepository paymentAttemptRepository) {
+									  PaymentAttemptRepository paymentAttemptRepository,
+									  ChannelRepository channelRepository) {
 		return args -> {
 			Logger logger = LoggerFactory.getLogger(getClass());
 			if (paymentProviderRepository.count() != 0L) {
@@ -91,12 +94,19 @@ public class PaymentsApplication {
 
 			ClientProfileEntity sender = new ClientProfileEntity(null, null, new BigDecimal(5000l), "sender@payments.com", "BG", "Address 1", "BGN");
 			ClientProfileEntity receiver = new ClientProfileEntity(null, null, new BigDecimal(5000l), "receiver@payments.com", "BG", "Address 2", "BGN");
-			PaymentProviderEntity provider = new PaymentProviderEntity(2l, "BG", "BGN", "STRIPE");
-			PaymentAttemptEntity payment = new PaymentAttemptEntity(1l, provider, "BGN", new BigDecimal(50l),
+//			PaymentProviderEntity provider = new PaymentProviderEntity(2l, "BG", "BGN", "STRIPE2");
+			PaymentAttemptEntity payment = new PaymentAttemptEntity(1l, paymentProviderEntity, "BGN", new BigDecimal(50l),
 					new BigDecimal(5l), sender, receiver);
 			paymentAttemptRepository.save(payment);
 			logger.info("Payment attempt created.");
 
+			ChannelEntity channelEntity = new ChannelEntity();
+			channelEntity.setPaymentProvider(paymentProviderEntity);
+			String supportedCurrencies = "BGN";
+			channelEntity.setSupportedCurrencies(supportedCurrencies);
+			channelEntity.setCurrency("BGN");
+			channelRepository.save(channelEntity);
+			logger.info("Channel created.");
 		};
 	}
 }

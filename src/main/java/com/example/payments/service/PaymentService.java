@@ -27,17 +27,20 @@ public class PaymentService {
 	private ClientProfileRepository clientProfileRepository;
 	private KafkaProducerService eventService;
 	private PaymentAttemptRepository paymentAttemptRepository;
+	private PaymentProviderRepository paymentProviderRepository;
 	private ModelMapper modelMapper;
 
 	public PaymentService(ChannelRepository channelRepository,
 			ClientProfileRepository clientProfileRepository,
 			KafkaProducerService notificationService,
 						  PaymentAttemptRepository paymentAttemptRepository,
+						  PaymentProviderRepository paymentProviderRepository,
 						  ModelMapper modelMapper) {
 		this.channelRepository = channelRepository;
 		this.eventService = notificationService;
 		this.clientProfileRepository = clientProfileRepository;
 		this.paymentAttemptRepository = paymentAttemptRepository;
+		this.paymentProviderRepository = paymentProviderRepository;
 		this.modelMapper = modelMapper;
 	}
 
@@ -128,13 +131,13 @@ public class PaymentService {
 	}
 
 	private Channel determineChannel(PaymentProvider paymentProvider, Currency currency) {
-		List<ChannelEntity> channels = channelRepository.findByPaymentProviderAndCurrency(paymentProvider, currency);
+		PaymentProviderEntity paymentProviderEntity = paymentProviderRepository.findByName(paymentProvider.getName());
+		List<ChannelEntity> channels = channelRepository.findByPaymentProviderAndCurrency(paymentProviderEntity, currency.toString());
 		return parseChannel(channels.get(0));		
 	}
 
 	private Channel parseChannel(ChannelEntity channelEntity) {
-		// TODO Auto-generated method stub
-		return null;
+		return modelMapper.map(channelEntity, Channel.class);
 	}
 
 	public PaymentData findById(Long paymentId) {
