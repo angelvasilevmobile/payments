@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 
 import com.example.payments.dao.*;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.interceptor.CacheableOperation;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class PaymentService {
 	private PaymentAttemptRepository paymentAttemptRepository;
 	private PaymentProviderRepository paymentProviderRepository;
 	private ModelMapper modelMapper;
+	private Logger logger = LoggerFactory.getLogger(getClass());
 
 	public PaymentService(ChannelRepository channelRepository,
 			ClientProfileRepository clientProfileRepository,
@@ -71,10 +74,12 @@ public class PaymentService {
 			
 			eventService.sendAntifraudFailureEvent(channel, paymentRequest, currency);
 			response = buildAntifraudErrorResponse(e);
+			logger.error("Antifraud exception with response: " + response.toString());
 		} catch (PaymentException e) {
 			
 			eventService.sendPaymentFailureEvent(channel, paymentRequest, currency);
 			response = buildPaymentErrorResponse(e);
+			logger.error("Payment exception with response: " + response.toString());
 		}
 		
 		return response;

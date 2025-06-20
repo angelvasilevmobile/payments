@@ -42,6 +42,7 @@ public class KafkaProducerService {
 
 	public void send(String topic, String message) {
 //		this.kafkaTemplate.send(topic, message);
+		logger.debug("Sending payload to kafka topic: " + topic + " , message: " +message );
 		this.kafkaProducer.send(new ProducerRecord<String, String>(topic, message));
 	}
 
